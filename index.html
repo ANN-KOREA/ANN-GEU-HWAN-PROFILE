@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>경력 → SPC 기능 연결 다이어그램</title>
+<style>
+  :root {
+    --bg:#0b1220; --panel:#121a2b; --ink:#eaf2ff; --muted:#9fb3d1;
+    --left:#7cc4ff; --right:#7ef2c4; --accent:#ffd166; --link:#3a4b73; --link-hi:#86a5ff;
+  }
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,AppleSDGothicNeo,Noto Sans KR,Segoe UI,Roboto,Helvetica,Arial;}
+  .wrap{display:flex;flex-direction:column;height:100%;gap:.75rem;padding:1rem;}
+  .head{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
+  .card{background:var(--panel);border-radius:16px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+  .title{font-weight:700;font-size:1.2rem}
+  .meta{color:var(--muted);font-size:.9rem}
+  .toolbar{display:flex;gap:.5rem;flex-wrap:wrap}
+  input,select{background:#0f1729;color:var(--ink);border:1px solid #223150;border-radius:10px;padding:.5rem .75rem;outline:none}
+  .stage{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:12px;min-height:560px;flex:1}
+  .panel{position:relative}
+  .col{display:flex;flex-direction:column;gap:.4rem;overflow:auto;padding:6px}
+  .node{cursor:pointer;background:#0f1729;border:1px solid #223150;border-radius:12px;padding:8px 10px;line-height:1.2}
+  .node.left{border-color:#1e4b7a;color:#bfe1ff}
+  .node.right{border-color:#1e7a63;color:#c1ffe6}
+  .node .sub{font-size:.78rem;color:var(--muted)}
+  .node:hover{box-shadow:0 0 0 2px var(--accent) inset}
+  .svgwrap{position:absolute;inset:0}
+  svg{width:100%;height:100%}
+  .link{stroke:var(--link);stroke-width:2.2;fill:none;opacity:.65;transition:opacity .15s, stroke .15s, stroke-width .15s}
+  .link.active{stroke:var(--link-hi);opacity:1;stroke-width:3.2}
+  .legend{display:flex;gap:10px;flex-wrap:wrap}
+  .pill{border:1px solid #2a3a5e;padding:.2rem .6rem;border-radius:999px;font-size:.8rem;color:var(--muted)}
+  .foot{display:flex;align-items:center;justify-content:space-between}
+  .hint{color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head card">
+    <div class="title">경력 → SPC 기능 연결 다이어그램</div>
+    <div class="meta">사람×AI Co-Creation 관점에서 경력(사업장)과 SPC 10대 기능의 매핑을 시각화</div>
+    <div class="toolbar">
+      <input id="search" placeholder="검색: 사업장/기능/키워드…" />
+      <select id="focus">
+        <option value="">하이라이트: 전체</option>
+        <option value="left">좌측(사업장)만</option>
+        <option value="right">우측(기능)만</option>
+      </select>
+      <div class="legend">
+        <span class="pill">좌: 경력(사업장)</span>
+        <span class="pill">우: SPC 기능 ①~⑩</span>
+        <span class="pill">호버/검색 시 연결선 하이라이트</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="panel card">
+      <div id="leftCol" class="col"></div>
+    </div>
+    <div class="panel card">
+      <div class="svgwrap"><svg id="wires" viewBox="0 0 1000 1000" preserveAspectRatio="none"></svg></div>
+    </div>
+    <div class="panel card">
+      <div id="rightCol" class="col"></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="hint">Tip: 노드 위에 마우스를 올리면 관련 연결선이 강조됩니다. 상단 검색으로 빠르게 필터링하세요.</div>
+    <div class="pill">SPC Generative Co‑Creation · v1</div>
+  </div>
+</div>
+
+<script>
+/* ------------------ 데이터 정의 ------------------ */
+// 좌측: 사업장(경력). label, sub(기간/도메인 추정)
+const leftNodes = [
+  { id:"L1", label:"창업기획자(엑셀러레이터) 스테이션케이(주)", sub:"2023.04–2024.10｜창업보육플랫폼/총괄", tags:["총괄","운영","거버넌스"] },
+  { id:"L2", label:"(주)위아프렌즈", sub:"2020.02–2022.09｜스타트업/애자일", tags:["프로토타입","애자일"] },
+  { id:"L3", label:"(주)엠티이지", sub:"2019.05–2019.11｜표준화/문서화", tags:["표준","문서화"] },
+  { id:"L4", label:"바이오인프라생명과학(주)", sub:"2013.02–2020.02｜바이오/근거중심", tags:["근거","윤리"] },
+  { id:"L5", label:"한국복지방송(주)", sub:"2011.10–2023.04｜미디어/커뮤니케이션", tags:["스토리","홍보"] },
+  { id:"L6", label:"(주)아이비에스컨설팅(1)", sub:"2010.02–2013.03｜컨설팅/지표화", tags:["지표","평가","컨설팅"] },
+  { id:"L7", label:"(주)아이비에스컨설팅(2)", sub:"2008.10–2009.08｜컨설팅/단기과업", tags:["요구정의"] },
+  { id:"L8", label:"파크사이드재활의학병원", sub:"2008.05–2010.02｜의료/윤리", tags:["보안","개인정보"] },
+  { id:"L9", label:"제주도농아복지관", sub:"2006.05–2007.09｜복지/접근성", tags:["접근성","쉬운글"] },
+  { id:"L10", label:"보건복지부 사회복지정책실 재활지원과", sub:"2004.04–2006.04｜공공/정책", tags:["정책","제도"] },
+  { id:"L11", label:"(재)노틀담복지관", sub:"2001.12–2004.01｜현장/사례관리", tags:["현장","사례"] },
+  { id:"L12", label:"한국장애인고용공단", sub:"1995.05–2001.12｜공공/고용", tags:["통계","평가"] },
+  { id:"L13", label:"사회복지법인 춘강", sub:"1993.04–1994.10｜복지/프로그램", tags:["기획","평가"] }
+];
+
+// 우측: SPC 기능 ①~⑩
+const rightNodes = [
+  { id:"R1", code:"①", label:"SPC CheckGPT(자가진단)" },
+  { id:"R2", code:"②", label:"SPC ReportGPT(보고서)" },
+  { id:"R3", code:"③", label:"SPC StoryGPT(스토리)" },
+  { id:"R4", code:"④", label:"SPC ChatGPT(지식형 Q&A)" },
+  { id:"R5", code:"⑤", label:"정성 가치 정량화GPT" },
+  { id:"R6", code:"⑥", label:"성과 예측(시나리오)GPT" },
+  { id:"R7", code:"⑦", label:"측정 기준 추천GPT" },
+  { id:"R8", code:"⑧", label:"SPC 위키(기업 백과)GPT" },
+  { id:"R9", code:"⑨", label:"SPC 큐레이션GPT" },
+  { id:"R10", code:"⑩", label:"사용자 매뉴얼·멤버십GPT" }
+];
+
+// 연결(경력 → 기능). weight는 강조 강도(1~3)
+const links = [
+  { from:"L1", to:"R10", weight:3 }, { from:"L1", to:"R9", weight:2 }, { from:"L1", to:"R2", weight:2 },
+  { from:"L2", to:"R1", weight:3 },  { from:"L2", to:"R2", weight:2 }, { from:"L2", to:"R8", weight:2 },
+  { from:"L3", to:"R2", weight:2 },  { from:"L3", to:"R7", weight:2 },
+  { from:"L4", to:"R2", weight:3 },  { from:"L4", to:"R5", weight:2 }, { from:"L4", to:"R6", weight:2 },
+  { from:"L5", to:"R3", weight:3 },  { from:"L5", to:"R9", weight:1 },
+  { from:"L6", to:"R5", weight:3 },  { from:"L6", to:"R7", weight:2 },
+  { from:"L7", to:"R9", weight:1 },  { from:"L7", to:"R1", weight:1 },
+  { from:"L8", to:"R10", weight:2 }, { from:"L8", to:"R4", weight:1 },
+  { from:"L9", to:"R10", weight:2 }, { from:"L9", to:"R1", weight:1 }, { from:"L9", to:"R4", weight:1 },
+  { from:"L10", to:"R6", weight:2 }, { from:"L10", to:"R7", weight:2 }, { from:"L10", to:"R2", weight:1 },
+  { from:"L11", to:"R1", weight:2 }, { from:"L11", to:"R4", weight:1 },
+  { from:"L12", to:"R6", weight:3 }, { from:"L12", to:"R2", weight:2 },
+  { from:"L13", to:"R5", weight:2 }, { from:"L13", to:"R1", weight:1 }
+];
+
+/* ------------------ 렌더링 ------------------ */
+const leftCol = document.getElementById('leftCol');
+const rightCol = document.getElementById('rightCol');
+const svg = document.getElementById('wires');
+const search = document.getElementById('search');
+const focusSel = document.getElementById('focus');
+
+function makeNodeEl(node, side){
+  const el = document.createElement('div');
+  el.className = `node ${side}`;
+  el.dataset.id = node.id;
+  el.innerHTML = `<div class="lbl">${node.label||node.code+' '+node.label}</div>` +
+                 (node.sub?`<div class="sub">${node.sub}</div>`:'');
+  el.addEventListener('mouseenter', ()=>highlight(node.id));
+  el.addEventListener('mouseleave', ()=>highlight(null));
+  return el;
+}
+
+function renderColumns(){
+  leftCol.innerHTML = ''; rightCol.innerHTML = '';
+  leftNodes.forEach(n=>leftCol.appendChild(makeNodeEl(n,'left')));
+  rightNodes.forEach(n=>{
+    const el = makeNodeEl({id:n.id,label:`${n.code} ${n.label}`},'right');
+    rightCol.appendChild(el);
+  });
+  requestAnimationFrame(drawLinks);
+}
+
+function bbox(el){
+  const r = el.getBoundingClientRect();
+  const host = svg.getBoundingClientRect();
+  // SVG 좌표로 변환
+  const x = r.left - host.left, y = r.top - host.top;
+  return { x, y, w:r.width, h:r.height };
+}
+
+function pathCmd(x1,y1,x2,y2,curv=0.6){
+  const dx = x2 - x1, c1x = x1 + dx*curv, c2x = x2 - dx*curv;
+  return `M ${x1},${y1} C ${c1x},${y1} ${c2x},${y2} ${x2},${y2}`;
+}
+
+function drawLinks(){
+  svg.innerHTML = '';
+  const L = {}; document.querySelectorAll('.node.left').forEach(el=>L[el.dataset.id]=bbox(el));
+  const R = {}; document.querySelectorAll('.node.right').forEach(el=>R[el.dataset.id]=bbox(el));
+
+  // viewBox 업데이트
+  const s = svg.getBoundingClientRect();
+  svg.setAttribute('viewBox',`0 0 ${s.width} ${s.height}`);
+
+  links.forEach((ln,i)=>{
+    const a = L[ln.from], b = R[ln.to]; if(!a||!b) return;
+    const x1 = a.x + a.w, y1 = a.y + a.h/2;
+    const x2 = b.x,       y2 = b.y + b.h/2;
+    const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d', pathCmd(x1,y1,x2,y2,0.55));
+    p.setAttribute('class','link');
+    p.setAttribute('data-from', ln.from);
+    p.setAttribute('data-to', ln.to);
+    p.style.strokeWidth = (1.6 + ln.weight*0.8);
+    svg.appendChild(p);
+  });
+}
+
+function highlight(id){
+  const all = svg.querySelectorAll('.link');
+  all.forEach(p=>p.classList.remove('active'));
+  if(!id) return;
+  all.forEach(p=>{
+    if(p.dataset.from===id || p.dataset.to===id) p.classList.add('active');
+  });
+}
+
+function applyFilter(){
+  const q = (search.value||'').trim().toLowerCase();
+  const focus = focusSel.value;
+  // 노드 필터
+  function visible(el){
+    if(!q) return true;
+    return el.textContent.toLowerCase().includes(q);
+  }
+  document.querySelectorAll('.node').forEach(el=>{
+    const show = visible(el) && ((focus==='left' && el.classList.contains('right')) ? false :
+                                 (focus==='right' && el.classList.contains('left')) ? false : true);
+    el.style.display = show?'':'none';
+  });
+  // 링크 필터
+  const leftShow = new Set([...document.querySelectorAll('.node.left')].filter(n=>n.style.display!=='none').map(n=>n.dataset.id));
+  const rightShow= new Set([...document.querySelectorAll('.node.right')].filter(n=>n.style.display!=='none').map(n=>n.dataset.id));
+  svg.querySelectorAll('.link').forEach(p=>{
+    const show = leftShow.has(p.dataset.from) && rightShow.has(p.dataset.to);
+    p.style.display = show?'':'none';
+  });
+}
+
+renderColumns();
+window.addEventListener('resize', ()=>requestAnimationFrame(drawLinks));
+search.addEventListener('input', ()=>{ applyFilter(); drawLinks(); });
+focusSel.addEventListener('change', ()=>{ applyFilter(); drawLinks(); });
+
+// 초기 필터 적용
+applyFilter();
+</script>
+</body>
+</html>
