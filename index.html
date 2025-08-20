@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>경력 → SPC 기능 연결 다이어그램</title>
+<title>경력 → SPC 10대 기능 연결 다이어그램</title>
 <style>
   :root {
     --bg:#0b1220; --panel:#121a2b; --ink:#eaf2ff; --muted:#9fb3d1;
@@ -38,7 +38,7 @@
 <body>
 <div class="wrap">
   <div class="head card">
-    <div class="title">경력 → SPC 기능 연결 다이어그램</div>
+    <div class="title">안규환 경력 → SPC 10대 기능 연결 다이어그램</div>
     <div class="meta">사람×AI Co-Creation 관점에서 경력(사업장)과 SPC 10대 기능의 매핑을 시각화</div>
     <div class="toolbar">
       <input id="search" placeholder="검색: 사업장/기능/키워드…" />
@@ -94,16 +94,16 @@ const leftNodes = [
 
 // 우측: SPC 기능 ①~⑩
 const rightNodes = [
-  { id:"R1", code:"①", label:"SPC CheckGPT(자가진단)" },
-  { id:"R2", code:"②", label:"SPC ReportGPT(보고서)" },
-  { id:"R3", code:"③", label:"SPC StoryGPT(스토리)" },
-  { id:"R4", code:"④", label:"SPC ChatGPT(지식형 Q&A)" },
-  { id:"R5", code:"⑤", label:"정성 가치 정량화GPT" },
-  { id:"R6", code:"⑥", label:"성과 예측(시나리오)GPT" },
-  { id:"R7", code:"⑦", label:"측정 기준 추천GPT" },
-  { id:"R8", code:"⑧", label:"SPC 위키(기업 백과)GPT" },
-  { id:"R9", code:"⑨", label:"SPC 큐레이션GPT" },
-  { id:"R10", code:"⑩", label:"사용자 매뉴얼·멤버십GPT" }
+  { id:"R1", code:"①", label:"SPC CheckBot(자가진단)" },
+  { id:"R2", code:"②", label:"SPC ReportBot(보고서)" },
+  { id:"R3", code:"③", label:"SPC StoryBot(스토리)" },
+  { id:"R4", code:"④", label:"SPC StoryBot(지식형 Q&A)" },
+  { id:"R5", code:"⑤", label:"정성자산가치평가" },
+  { id:"R6", code:"⑥", label:"SPC 성과예측" },
+  { id:"R7", code:"⑦", label:"측정 가이드Bot" },
+  { id:"R8", code:"⑧", label:"SPC Wiki" },
+  { id:"R9", code:"⑨", label:"SPC 기업큐레이션" },
+  { id:"R10", code:"⑩", label:"사용자 매뉴얼·멤버십" }
 ];
 
 // 연결(경력 → 기능). weight는 강조 강도(1~3)
@@ -227,4 +227,5 @@ focusSel.addEventListener('change', ()=>{ applyFilter(); drawLinks(); });
 applyFilter();
 </script>
 </body>
+
 </html>
